@@ -2,20 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
-void main() async {
-  final client = MqttServerClient.withPort(
-      '5a7e228c56c94e90bf6e3c78066153ee.s1.eu.hivemq.cloud', 'client1', 8883);
-  // client.secure = true;
-  await client.connect('first', '123456789');
-
-  print('Connected to the broker');
-
-  runApp(MyApp(client: client));
+void main() {
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final MqttServerClient client;
-  const MyApp({super.key, required this.client});
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -26,27 +18,42 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: MyHomePage(title: 'MQTT Publish', client: client),
+      home: MyHomePage(title: 'MQTT Publish'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  final MqttServerClient client;
   final String title;
-  const MyHomePage({super.key, required this.title, required this.client});
+  const MyHomePage({
+    super.key,
+    required this.title,
+  });
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool isConnected = false;
+  bool isLoading = true;
+  final client = MqttServerClient.withPort('192.168.1.5', 'client1', 1883);
+  Future<bool> _connectToBroker() async {
+    // client.secure = true;
+    try {
+      await client.connect('narada', 'narada505308');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   final textController = TextEditingController();
   void _sendMessage() {
     final builder = MqttClientPayloadBuilder();
     builder.addString(textController.text);
-    widget.client
-        .publishMessage('flutter/test', MqttQos.atLeastOnce, builder.payload!);
+    client.publishMessage(
+        'flutter/test', MqttQos.atLeastOnce, builder.payload!);
     textController.clear();
   }
 
@@ -58,30 +65,64 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            SizedBox(
-              width: 200,
-              child: TextField(
-                controller: textController,
-                decoration: InputDecoration(
-                  hintText: 'Enter your message',
-                  border: OutlineInputBorder(),
+        child: isConnected
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(
+                    width: 200,
+                    child: TextField(
+                      controller: textController,
+                      decoration: InputDecoration(
+                        hintText: 'Enter your message',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.all<Color>(
+                          Theme.of(context).colorScheme.primary),
+                    ),
+                    onPressed: _sendMessage,
+                    child: Text('Send', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              )
+            : ElevatedButton(
+                onPressed: () {
+                  isLoading = true;
+                  if (isLoading) {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text('Connecting to broker'),
+                          content: CircularProgressIndicator(),
+                        );
+                      },
+                    );
+                  }
+
+                  _connectToBroker().then(
+                    (value) {
+                      setState(() {
+                        isConnected = value;
+                        isLoading = false;
+                        Navigator.pop(context);
+                      });
+                    },
+                  );
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all<Color>(
+                      Theme.of(context).colorScheme.primary),
                 ),
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all<Color>(
-                    Theme.of(context).colorScheme.primary),
-              ),
-              onPressed: _sendMessage,
-              child: Text('Send', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
+                child: Text(
+                  'Connect',
+                  style: TextStyle(color: Colors.white),
+                )),
       ),
     );
   }
