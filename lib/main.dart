@@ -36,12 +36,13 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   bool isConnected = false;
-  bool isLoading = true;
-  final client = MqttServerClient.withPort('192.168.1.5', 'client1', 1883);
+  final client = MqttServerClient.withPort(
+      '5a7e228c56c94e90bf6e3c78066153ee.s1.eu.hivemq.cloud', 'client1', 8883);
   Future<bool> _connectToBroker() async {
-    // client.secure = true;
+    client.secure = true;
     try {
-      await client.connect('narada', 'narada505308');
+      await client.connect('first', '123456789');
+      client.subscribe('flutter/test', MqttQos.atLeastOnce);
       return true;
     } catch (e) {
       return false;
@@ -66,54 +67,77 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: isConnected
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    width: 200,
-                    child: TextField(
-                      controller: textController,
-                      decoration: InputDecoration(
-                        hintText: 'Enter your message',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all<Color>(
-                          Theme.of(context).colorScheme.primary),
-                    ),
-                    onPressed: _sendMessage,
-                    child: Text('Send', style: TextStyle(color: Colors.white)),
-                  ),
-                ],
-              )
-            : ElevatedButton(
-                onPressed: () {
-                  isLoading = true;
-                  if (isLoading) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: Text('Connecting to broker'),
-                          content: CircularProgressIndicator(),
-                        );
-                      },
-                    );
+            ? StreamBuilder<List<MqttReceivedMessage<MqttMessage>>>(
+                stream: client.updates, // Receive MQTT updates
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return CircularProgressIndicator();
                   }
+                  final updates = snapshot.data!;
+                  final MqttPublishMessage recMess =
+                      updates.last.payload as MqttPublishMessage;
+                  final String latestUpdate =
+                      MqttPublishPayload.bytesToStringAsString(
+                          recMess.payload.message);
+                  return Center(child: Text('Latest msg: $latestUpdate'));
+                },
+              )
 
-                  _connectToBroker().then(
-                    (value) {
-                      setState(() {
-                        isConnected = value;
-                        isLoading = false;
-                        Navigator.pop(context);
-                      });
+            //  Column(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: <Widget>[
+
+            //       SizedBox(
+            //         width: 200,
+            //         child: TextField(
+            //           controller: textController,
+            //           decoration: InputDecoration(
+            //             hintText: 'Enter your message',
+            //             border: OutlineInputBorder(),
+            //           ),
+            //         ),
+            //       ),
+            //       SizedBox(height: 20),
+            //       ElevatedButton(
+            //         style: ButtonStyle(
+            //           backgroundColor: WidgetStateProperty.all<Color>(
+            //               Theme.of(context).colorScheme.primary),
+            //         ),
+            //         onPressed: _sendMessage,
+            //         child: Text('Send', style: TextStyle(color: Colors.white)),
+            //       ),
+            //     ],
+            //   )
+            : ElevatedButton(
+                onPressed: () async {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text('Connecting to broker'),
+                        content: CircularProgressIndicator(),
+                      );
                     },
                   );
+
+                  final status = await _connectToBroker();
+                  Navigator.pop(context);
+                  if (status) {
+                    setState(() {
+                      isConnected = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Connected to broker'),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to connect to broker'),
+                      ),
+                    );
+                  }
                 },
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all<Color>(
