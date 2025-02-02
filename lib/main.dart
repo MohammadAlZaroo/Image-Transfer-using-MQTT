@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:mqtt_test/bits.dart';
 
 void main() {
   runApp(MyApp());
@@ -110,7 +110,35 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
                 },
                 onLongPress: () {
-                  sendbitmapArryofInts(imageBytes: x);
+                  readImage('like.png').then((value) {
+                    img.Image image = cannyEdgeDetection(value);
+                    sendbitmapArryofInts(
+                        imageBytes: convertImageToByteArray(image));
+                  });
+
+                  readImage('joy.png').then((value) {
+                    img.Image image = cannyEdgeDetection(value);
+                    sendbitmapArryofInts(
+                        imageBytes: convertImageToByteArray(image));
+                  });
+
+                  readImage('fire.png').then((value) {
+                    img.Image image = cannyEdgeDetection(value);
+                    sendbitmapArryofInts(
+                        imageBytes: convertImageToByteArray(image));
+                  });
+
+                  readImage('exp.png').then((value) {
+                    img.Image image = cannyEdgeDetection(value);
+                    sendbitmapArryofInts(
+                        imageBytes: convertImageToByteArray(image));
+                  });
+
+                  readImage('clown.png').then((value) {
+                    img.Image image = cannyEdgeDetection(value);
+                    sendbitmapArryofInts(
+                        imageBytes: convertImageToByteArray(image));
+                  });
                 },
                 child: Text('Send Image'))
           ],
@@ -132,7 +160,6 @@ class _MyHomePageState extends State<MyHomePage> {
     img.Image monoImage = img.grayscale(image);
     List<int> histogram = computeHistogram(monoImage);
     int threshold = otsuThreshold(histogram);
-    print(threshold);
     // Get image dimensions
     int width = monoImage.width;
     int height = monoImage.height;
@@ -151,6 +178,218 @@ class _MyHomePageState extends State<MyHomePage> {
               ? 1
               : 0; // Threshold to determine black/white
           byte |= (bitValue << (7 - bit)); // Store bit in the correct position
+        }
+        imgBytes[y * (width ~/ 8) + x] = byte;
+      }
+    }
+
+    return imgBytes;
+  }
+
+  Future<img.Image> readImage(String name) async {
+    final ByteData imageData = await rootBundle.load('assets/images/$name');
+    Uint8List imageBytes = imageData.buffer.asUint8List();
+    img.Image? image = img.decodeImage(imageBytes);
+    if (image == null) {
+      throw Exception('Failed to decode image');
+    }
+    return image;
+  }
+
+  /// Applies Canny edge detection to an image.
+  img.Image cannyEdgeDetection(img.Image image,
+      {double? lowThreshold, double? highThreshold}) {
+    // Convert to grayscale
+    img.Image grayImage = img.grayscale(image);
+
+    int width = grayImage.width;
+    int height = grayImage.height;
+
+    // Step 1: Apply Gaussian Blur
+    List<List<double>> gaussianKernel = [
+      [2, 4, 5, 4, 2],
+      [4, 9, 12, 9, 4],
+      [5, 12, 15, 12, 5],
+      [4, 9, 12, 9, 4],
+      [2, 4, 5, 4, 2]
+    ];
+    double kernelSum =
+        gaussianKernel.expand((row) => row).reduce((a, b) => a + b);
+    grayImage = applyConvolution(grayImage, gaussianKernel, kernelSum);
+
+    // Step 2: Compute Gradients using Sobel Operator
+    List<List<int>> sobelX = [
+      [-1, 0, 1],
+      [-2, 0, 2],
+      [-1, 0, 1]
+    ];
+    List<List<int>> sobelY = [
+      [1, 2, 1],
+      [0, 0, 0],
+      [-1, -2, -1]
+    ];
+
+    List<List<double>> gradientMagnitude =
+        List.generate(height, (_) => List.filled(width, 0.0));
+    List<List<double>> gradientDirection =
+        List.generate(height, (_) => List.filled(width, 0.0));
+
+    for (int y = 1; y < height - 1; y++) {
+      for (int x = 1; x < width - 1; x++) {
+        double gx = 0, gy = 0;
+
+        for (int ky = -1; ky <= 1; ky++) {
+          for (int kx = -1; kx <= 1; kx++) {
+            int pixel = grayImage.getPixel(x + kx, y + ky) & 0xFF;
+            gx += pixel * sobelX[ky + 1][kx + 1];
+            gy += pixel * sobelY[ky + 1][kx + 1];
+          }
+        }
+
+        gradientMagnitude[y][x] = sqrt(gx * gx + gy * gy);
+        gradientDirection[y][x] = atan2(gy, gx);
+      }
+    }
+
+    // Step 3: Non-Maximum Suppression
+    img.Image suppressedImage = img.Image(width, height);
+    for (int y = 1; y < height - 1; y++) {
+      for (int x = 1; x < width - 1; x++) {
+        double angle = gradientDirection[y][x] * (180.0 / pi);
+        angle = (angle < 0) ? angle + 180 : angle;
+
+        double mag = gradientMagnitude[y][x];
+        double q = 255, r = 255;
+
+        if ((angle >= 0 && angle < 22.5) || (angle >= 157.5 && angle <= 180)) {
+          q = gradientMagnitude[y][x + 1];
+          r = gradientMagnitude[y][x - 1];
+        } else if (angle >= 22.5 && angle < 67.5) {
+          q = gradientMagnitude[y + 1][x - 1];
+          r = gradientMagnitude[y - 1][x + 1];
+        } else if (angle >= 67.5 && angle < 112.5) {
+          q = gradientMagnitude[y + 1][x];
+          r = gradientMagnitude[y - 1][x];
+        } else if (angle >= 112.5 && angle < 157.5) {
+          q = gradientMagnitude[y - 1][x - 1];
+          r = gradientMagnitude[y + 1][x + 1];
+        }
+
+        if (mag >= q && mag >= r) {
+          suppressedImage.setPixel(
+              x, y, img.getColor(mag.toInt(), mag.toInt(), mag.toInt()));
+        } else {
+          suppressedImage.setPixel(x, y, img.getColor(0, 0, 0));
+        }
+      }
+    }
+    if (lowThreshold == null || highThreshold == null) {
+      final histo = computeHistogram(suppressedImage);
+      highThreshold = otsuThreshold(histo).toDouble();
+      lowThreshold = highThreshold * 0.5;
+    }
+
+    // Step 4: Double Thresholding & Edge Tracking by Hysteresis
+    img.Image finalImage = img.Image(width, height);
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        int pixel = suppressedImage.getPixel(x, y) & 0xFF;
+        if (pixel >= highThreshold) {
+          finalImage.setPixel(x, y, img.getColor(255, 255, 255)); // Strong edge
+        } else if (pixel >= lowThreshold) {
+          bool isEdge = false;
+          for (int ky = -1; ky <= 1; ky++) {
+            for (int kx = -1; kx <= 1; kx++) {
+              if (y + ky >= 0 &&
+                  y + ky < height &&
+                  x + kx >= 0 &&
+                  x + kx < width) {
+                int neighborPixel =
+                    suppressedImage.getPixel(x + kx, y + ky) & 0xFF;
+                if (neighborPixel >= highThreshold) {
+                  isEdge = true;
+                  break;
+                }
+              }
+            }
+            if (isEdge) break;
+          }
+
+          if (!isEdge) {
+            for (int ky = -2; ky <= 2; ky++) {
+              for (int kx = -2; kx <= 2; kx++) {
+                if (y + ky >= 0 &&
+                    y + ky < height &&
+                    x + kx >= 0 &&
+                    x + kx < width) {
+                  int neighborPixel =
+                      suppressedImage.getPixel(x + kx, y + ky) & 0xFF;
+                  if (neighborPixel >= highThreshold) {
+                    isEdge = true;
+                    break;
+                  }
+                }
+              }
+              if (isEdge) break;
+            }
+          }
+
+          if (isEdge) {
+            finalImage.setPixel(x, y, img.getColor(255, 255, 255)); // Edge
+          } else {
+            finalImage.setPixel(x, y, img.getColor(0, 0, 0)); // No edge
+          }
+        } else {
+          finalImage.setPixel(x, y, img.getColor(0, 0, 0)); // No edge
+        }
+      }
+    }
+
+    return finalImage;
+  }
+
+  /// Applies a convolution filter to an image.
+  img.Image applyConvolution(
+      img.Image image, List<List<double>> kernel, double kernelSum) {
+    int width = image.width;
+    int height = image.height;
+    img.Image result = img.Image(width, height);
+
+    int kSize = kernel.length;
+    int kOffset = kSize ~/ 2;
+
+    for (int y = kOffset; y < height - kOffset; y++) {
+      for (int x = kOffset; x < width - kOffset; x++) {
+        double sum = 0;
+
+        for (int ky = 0; ky < kSize; ky++) {
+          for (int kx = 0; kx < kSize; kx++) {
+            int pixel =
+                image.getPixel(x + kx - kOffset, y + ky - kOffset) & 0xFF;
+            sum += pixel * kernel[ky][kx];
+          }
+        }
+
+        sum = sum / kernelSum;
+        result.setPixel(
+            x, y, img.getColor(sum.toInt(), sum.toInt(), sum.toInt()));
+      }
+    }
+    return result;
+  }
+
+  Uint8List convertImageToByteArray(img.Image image) {
+    int width = image.width;
+    int height = image.height;
+    Uint8List imgBytes = Uint8List((width * height) ~/ 8);
+
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width ~/ 8; x++) {
+        int byte = 0;
+        for (int bit = 0; bit < 8; bit++) {
+          int pixel = image.getPixel(x * 8 + bit, y) & 0xFF;
+          int bitValue = pixel == 255 ? 1 : 0; // White = 1, Black = 0
+          byte |= (bitValue << (7 - bit));
         }
         imgBytes[y * (width ~/ 8) + x] = byte;
       }
@@ -248,32 +487,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       );
                     },
                   )
-
-            //  Column(
-            //     mainAxisAlignment: MainAxisAlignment.center,
-            //     children: <Widget>[
-
-            //       SizedBox(
-            //         width: 200,
-            //         child: TextField(
-            //           controller: textController,
-            //           decoration: InputDecoration(
-            //             hintText: 'Enter your message',
-            //             border: OutlineInputBorder(),
-            //           ),
-            //         ),
-            //       ),
-            //       SizedBox(height: 20),
-            //       ElevatedButton(
-            //         style: ButtonStyle(
-            //           backgroundColor: WidgetStateProperty.all<Color>(
-            //               Theme.of(context).colorScheme.primary),
-            //         ),
-            //         onPressed: _sendMessage,
-            //         child: Text('Send', style: TextStyle(color: Colors.white)),
-            //       ),
-            //     ],
-            //   )
             : ElevatedButton(
                 onPressed: () async {
                   showDialog(
