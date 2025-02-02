@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -92,7 +93,19 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ElevatedButton(
                 onPressed: () {
-                  convertImageToIntArray2().then((value) {
+                  convertImageToIntArray('clown.png').then((value) {
+                    sendbitmapArryofInts(imageBytes: value);
+                  });
+                  convertImageToIntArray('exp.png').then((value) {
+                    sendbitmapArryofInts(imageBytes: value);
+                  });
+                  convertImageToIntArray('fire.png').then((value) {
+                    sendbitmapArryofInts(imageBytes: value);
+                  });
+                  convertImageToIntArray('joy.png').then((value) {
+                    sendbitmapArryofInts(imageBytes: value);
+                  });
+                  convertImageToIntArray('like.png').then((value) {
                     sendbitmapArryofInts(imageBytes: value);
                   });
                 },
@@ -106,20 +119,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<List<int>> convertImageToIntArray() async {
-    final ByteData imageData =
-        await rootBundle.load('assets/images/expbit.bmp');
-
-    Uint8List imageBytes = imageData.buffer.asUint8List(0, 1024);
-
-    print(imageBytes.length);
-    return imageBytes;
-  }
-
-  Future<List<int>> convertImageToIntArray2() async {
+  Future<List<int>> convertImageToIntArray(String name) async {
     // Load BMP file
-    final ByteData imageData =
-        await rootBundle.load('assets/images/clownbit.bmp');
+    final ByteData imageData = await rootBundle.load('assets/images/$name');
     Uint8List imageBytes = imageData.buffer.asUint8List();
     img.Image? image = img.decodeImage(imageBytes);
 
@@ -128,7 +130,9 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     // Ensure the image is monochrome (grayscale)
     img.Image monoImage = img.grayscale(image);
-
+    List<int> histogram = computeHistogram(monoImage);
+    int threshold = otsuThreshold(histogram);
+    print(threshold);
     // Get image dimensions
     int width = monoImage.width;
     int height = monoImage.height;
@@ -143,8 +147,9 @@ class _MyHomePageState extends State<MyHomePage> {
           int pixel = monoImage.getPixel(x * 8 + bit, y);
           int luminance =
               img.getLuminance(pixel); // Get pixel brightness (0-255)
-          int bitValue =
-              luminance > 128 ? 1 : 0; // Threshold to determine black/white
+          int bitValue = luminance > (threshold - 1)
+              ? 1
+              : 0; // Threshold to determine black/white
           byte |= (bitValue << (7 - bit)); // Store bit in the correct position
         }
         imgBytes[y * (width ~/ 8) + x] = byte;
@@ -154,18 +159,46 @@ class _MyHomePageState extends State<MyHomePage> {
     return imgBytes;
   }
 
-  sendbitmapArrayOfStrings() {
-    convertImageToIntArray().then((value) {
-      final jsonObject = {
-        'image': value,
-      };
-      print(value.length);
-      final jsonString = jsonEncode(jsonObject);
-      final builder = MqttClientPayloadBuilder();
-      builder.addString(jsonString);
-      client.publishMessage(
-          'flutter/test', MqttQos.atLeastOnce, builder.payload!);
-    });
+  List<int> computeHistogram(img.Image image) {
+    List<int> histogram = List.filled(image.height * image.width, 0);
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        int pixel = image.getPixel(x, y);
+        int luminance = img.getLuminance(pixel);
+        histogram[luminance]++;
+      }
+    }
+    return histogram;
+  }
+
+  int otsuThreshold(List<int> histogramCounts) {
+    int total =
+        histogramCounts.reduce((a, b) => a + b); // Total number of pixels
+    int top = 256;
+    int sumB = 0;
+    int wB = 0;
+    double maximum = 0.0;
+    int level = 0;
+
+    // Compute the sum of intensity values times their frequencies
+    int sum1 = List.generate(top, (i) => i * histogramCounts[i])
+        .reduce((a, b) => a + b);
+
+    for (int i = 0; i < top; i++) {
+      int wF = total - wB;
+      if (wB > 0 && wF > 0) {
+        double mF = (sum1 - sumB) / wF;
+        double val = wB * wF * ((sumB / wB) - mF) * ((sumB / wB) - mF);
+        if (val >= maximum) {
+          level = i;
+          maximum = val;
+        }
+      }
+      wB += histogramCounts[i];
+      sumB += i * histogramCounts[i];
+    }
+
+    return level;
   }
 
   sendbitmapArryofInts({required List<int> imageBytes}) {
@@ -180,19 +213,6 @@ class _MyHomePageState extends State<MyHomePage> {
         'imageIndex$i': imageLists[i],
       };
 
-      final jsonString = jsonEncode(jsonObject);
-      final builder = MqttClientPayloadBuilder();
-      builder.addString(jsonString);
-      client.publishMessage(
-          'flutter/test', MqttQos.atLeastOnce, builder.payload!);
-    }
-  }
-
-  send1024OfArrayElements() {
-    for (int i = 0; i < y.length; i++) {
-      final jsonObject = {
-        'imageIndex$i': y[i],
-      };
       final jsonString = jsonEncode(jsonObject);
       final builder = MqttClientPayloadBuilder();
       builder.addString(jsonString);
