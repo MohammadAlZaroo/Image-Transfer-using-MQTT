@@ -46,6 +46,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final client = MqttServerClient.withPort(
       '5a7e228c56c94e90bf6e3c78066153ee.s1.eu.hivemq.cloud', 'client1', 8883);
   final List<String> messages = []; // List to store messages
+  _reconnect() async {
+    while (true) {
+      await Future.delayed(Duration(seconds: 4));
+      if (client.connectionStatus!.state == MqttConnectionState.disconnected) {
+        setState(() {
+          isConnected = false;
+        });
+      }
+    }
+  }
 
   Future<bool> _connectToBroker() async {
     client.secure = true;
@@ -458,6 +468,12 @@ class _MyHomePageState extends State<MyHomePage> {
       client.publishMessage(
           'flutter/test', MqttQos.atLeastOnce, builder.payload!);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _reconnect();
   }
 
   @override
