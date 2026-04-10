@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MQTT App',
-      theme: ThemeData(useMaterial3: true),
+      theme: darkTheme,
       initialRoute: '/',
       routes: {
         '/': (context) => const HomePage(),
@@ -22,3 +22,36 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+ThemeData darkTheme = ThemeData(
+  brightness: Brightness.dark,
+
+  colorScheme: ColorScheme(
+    brightness: Brightness.dark,
+    primary: Color(0xFF00B4D8),
+    onPrimary: Colors.black,
+    secondary: Color(0xFF48CAE4),
+    onSecondary: Colors.black,
+    error: Color(0xFFFF4D6D),
+    onError: Colors.white,
+    surface: Color(0xFF1B263B),
+    onSurface: Color(0xFFE0E1DD),
+  ),
+
+  scaffoldBackgroundColor: Color(0xFF0D1B2A),
+
+  appBarTheme: AppBarTheme(
+    backgroundColor: Color(0xFF1B263B),
+    elevation: 0,
+  ),
+
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Color(0xFF00B4D8),
+      foregroundColor: Colors.black,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  ),
+);
