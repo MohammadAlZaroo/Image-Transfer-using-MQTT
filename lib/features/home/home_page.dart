@@ -38,13 +38,23 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text("MQTT Client"),
       ),
-      body: Center(
-        child: loading
-            ? const CircularProgressIndicator()
-            : ElevatedButton(
-                onPressed: connect,
-                child: const Text("Connect to Broker"),
-              ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Text(
+            "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
+            style: Theme.of(context).textTheme.headlineMedium,
+            textAlign: TextAlign.center,
+          ),
+          Center(
+            child: loading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: connect,
+                    child: const Text("Connect to Broker"),
+                  ),
+          ),
+        ],
       ),
     );
   }
