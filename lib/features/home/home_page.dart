@@ -32,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: const Text("MQTT Client"),),
       body: Center(
         child: loading
             ? const CircularProgressIndicator()
