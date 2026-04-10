@@ -41,13 +41,21 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
+          Column(
+            children: [
+              Image.asset(
+                'assets/images/mqtt_logo.png',
+                width: 220,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
           ),
           Center(
             child: loading
