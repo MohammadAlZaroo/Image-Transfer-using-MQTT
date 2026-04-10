@@ -41,10 +41,13 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text(
-            "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
-            style: Theme.of(context).textTheme.headlineMedium,
-            textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
+            ),
           ),
           Center(
             child: loading
