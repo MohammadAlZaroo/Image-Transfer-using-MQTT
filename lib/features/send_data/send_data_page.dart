@@ -8,16 +8,15 @@ class SendDataPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Send Data")),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ElevatedButton(
-            onPressed: () =>
-                Navigator.pushNamed(context, '/send-text'),
+            onPressed: () => Navigator.pushNamed(context, '/send-text'),
             child: const Text("Send Text"),
           ),
           ElevatedButton(
-            onPressed: () =>
-                Navigator.pushNamed(context, '/send-image'),
+            onPressed: () => Navigator.pushNamed(context, '/send-image'),
             child: const Text("Send Image"),
           ),
         ],
