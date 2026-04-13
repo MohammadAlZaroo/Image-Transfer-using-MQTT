@@ -4,4 +4,4 @@ This Flutter application demonstrates how to transfer images using MQTT protocol
 
 I also implemented the famous Canny edge detection algorithm to process the image before sending it to the ESP32. This allows us to see the edges of the image clearly on the OLED screen, which is especially useful for low-resolution displays. Note that there is no library available for Canny edge detection in Flutter, so I had to implement it from scratch. The implementation is not optimized for performance, but it works well for small images.
 
-
+**the project is under development, and i will provide secreenshots and more details soon.**
