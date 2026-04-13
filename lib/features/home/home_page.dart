@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mqtt_test/features/shared_widgets/mqtt_logo.dart';
 import '../../core/mqtt/mqtt_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -38,32 +39,34 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text("MQTT Client"),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      body: Stack(
         children: [
+          MqttLogo(),
           Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Image.asset(
-                'assets/images/mqtt_logo.png',
-                width: 220,
+              Column(
+                children: [
+                  SizedBox(height: 40), // Logo height + top padding
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "Welcome to the MQTT Client App! Press the button below to connect to the broker.",
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
+              Center(
+                child: loading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: connect,
+                        child: const Text("Connect to Broker"),
+                      ),
               ),
             ],
-          ),
-          Center(
-            child: loading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: connect,
-                    child: const Text("Connect to Broker"),
-                  ),
           ),
         ],
       ),
