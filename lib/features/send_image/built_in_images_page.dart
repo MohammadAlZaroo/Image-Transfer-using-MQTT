@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import '../../core/image_processing/image_converter.dart';
 import '../../core/mqtt/mqtt_service.dart';
@@ -9,8 +11,7 @@ class SendBuiltInImagePage extends StatefulWidget {
   State<SendBuiltInImagePage> createState() => _SendBuiltInImagePageState();
 }
 
-
-
+Uint8List reconstructedImage = Uint8List(0);
 
 class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
   /// 🔹 Your built-in images
@@ -80,6 +81,11 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
                   onTap: () {
                     setState(() {
                       selectedIndex = index;
+                      ImageConverter.convertImageToIntArray(images[index])
+                          .then((value) {
+                        ImageConverter.reconstructImageFromBytes(value);
+                        reconstructedImage = ImageConverter.imageToDisplay();
+                      });
                     });
                   },
                   child: Container(
@@ -120,6 +126,13 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
               },
             ),
           ),
+          if (reconstructedImage.isNotEmpty)
+            Column(
+              children: [
+                Text("The Image will look like this on the OLED screen"),
+                Image.memory(reconstructedImage, width: 128, height: 64),
+              ],
+            ),
 
           /// 🔹 Send Button
           Padding(

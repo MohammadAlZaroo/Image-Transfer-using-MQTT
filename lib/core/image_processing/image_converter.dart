@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
 
+
+img.Image reconstructed = img.Image(128, 64);
 class ImageConverter {
   static Future<List<int>> convertAssetToMono(String name) async {
     final data = await rootBundle.load('assets/images/$name');
@@ -117,12 +119,12 @@ class ImageConverter {
         }
       }
     }
-
+    reconstructed = image;
     return image;
   }
 
-Uint8List imageToDisplay(img.Image image) {
-  return Uint8List.fromList(img.encodePng(image));
+static Uint8List imageToDisplay() {
+  return Uint8List.fromList(img.encodePng(reconstructed));
 }
 
   /// Applies Canny edge detection to an image.
