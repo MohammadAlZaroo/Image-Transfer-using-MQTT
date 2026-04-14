@@ -35,9 +35,10 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
     final selectedImage = images[selectedIndex!];
 
     try {
-      final bytes = await ImageConverter.convertAssetToMono(selectedImage);
-
-      MqttService().publishImage(bytes);
+      // the following two lines needs change.
+      ImageConverter.convertImageToIntArray(selectedImage).then((value){
+        MqttService().publishImage(value);
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Image sent successfully")),
@@ -123,7 +124,7 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: isSending ? null : () => (),
+                onPressed: isSending ? null : sendSelectedImage,
                 child: isSending
                     ? const CircularProgressIndicator()
                     : const Text("Send Image"),

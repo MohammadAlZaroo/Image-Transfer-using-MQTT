@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -35,22 +36,23 @@ class MqttService {
   }
 
   void publishImage(List<int> imageBytes) {
-    const int chunkSize = 32;
+    List<List<int>> imageLists = [];
+    const int subArraySize = 32;
+    for (int i = 0; i < imageBytes.length ~/ subArraySize; i++) {
+      imageLists
+          .add(imageBytes.sublist(i * subArraySize, (i + 1) * subArraySize));
+    }
+    for (int i = 0; i < imageLists.length; i++) {
+      final jsonObject = {
+        'imageIndex$i': imageLists[i],
+      };
 
-    for (int i = 0; i < imageBytes.length ~/ chunkSize; i++) {
-      final chunk = imageBytes.sublist(i * chunkSize, (i + 1) * chunkSize);
-
-      final json = jsonEncode({
-        "type": "image",
-        "index": i,
-        "data": chunk,
-      });
-
+      final jsonString = jsonEncode(jsonObject);
       final builder = MqttClientPayloadBuilder();
-      builder.addString(json);
-
+      builder.addString(jsonString);
       client.publishMessage(
-          'flutter/test', MqttQos.atLeastOnce, builder.payload!);
+      'flutter/test', MqttQos.atLeastOnce, builder.payload!);
+    }
+
     }
   }
-}
