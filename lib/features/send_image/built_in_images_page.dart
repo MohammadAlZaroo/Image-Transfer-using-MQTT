@@ -9,6 +9,9 @@ class SendBuiltInImagePage extends StatefulWidget {
   State<SendBuiltInImagePage> createState() => _SendBuiltInImagePageState();
 }
 
+
+
+
 class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
   /// 🔹 Your built-in images
   final List<String> images = [
@@ -36,7 +39,7 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
 
     try {
       // the following two lines needs change.
-      ImageConverter.convertImageToIntArray(selectedImage).then((value){
+      ImageConverter.convertImageToIntArray(selectedImage).then((value) {
         MqttService().publishImage(value);
       });
 
