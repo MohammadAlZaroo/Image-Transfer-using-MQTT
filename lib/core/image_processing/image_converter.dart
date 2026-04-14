@@ -3,44 +3,12 @@ import 'dart:math';
 import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart';
 
-
 img.Image reconstructed = img.Image(128, 64);
+img.Image reconstructedEdge = img.Image(128, 64);
+
 class ImageConverter {
-  static Future<List<int>> convertAssetToMono(String name) async {
-    final data = await rootBundle.load('assets/images/$name');
-    Uint8List bytes = data.buffer.asUint8List();
-
-    img.Image? image = img.decodeImage(bytes);
-    if (image == null) throw Exception("Invalid image");
-
-    img.Image gray = img.grayscale(image);
-
-    int width = gray.width;
-    int height = gray.height;
-
-    Uint8List output = Uint8List((width * height) ~/ 8);
-
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width ~/ 8; x++) {
-        int byte = 0;
-
-        for (int bit = 0; bit < 8; bit++) {
-          int pixel = gray.getPixel(x * 8 + bit, y);
-          int lum = img.getLuminance(pixel);
-
-          int bitValue = lum > 128 ? 1 : 0;
-          byte |= (bitValue << (7 - bit));
-        }
-
-        output[y * (width ~/ 8) + x] = byte;
-      }
-    }
-
-    return output;
-  }
-
 // test function to read image and return it as img.Image
-  Future<img.Image> readImage(String name) async {
+  static Future<img.Image> readImage(String name) async {
     final ByteData imageData = await rootBundle.load('assets/images/$name');
     Uint8List imageBytes = imageData.buffer.asUint8List();
     img.Image? image = img.decodeImage(imageBytes);
@@ -119,16 +87,22 @@ class ImageConverter {
         }
       }
     }
-    reconstructed = image;
     return image;
   }
 
-static Uint8List imageToDisplay() {
-  return Uint8List.fromList(img.encodePng(reconstructed));
-}
+  void selectImage(int index) {
+    if (index == 0){
+      
+    }
+  }
+  static Uint8List imageToDisplay(img.Image image) {
+    return Uint8List.fromList(img.encodePng(image));
+  }
+
+
 
   /// Applies Canny edge detection to an image.
-  img.Image cannyEdgeDetection(img.Image image,
+  static img.Image cannyEdgeDetection(img.Image image,
       {double? lowThreshold, double? highThreshold}) {
     // Convert to grayscale
     img.Image grayImage = img.grayscale(image);
@@ -280,7 +254,7 @@ static Uint8List imageToDisplay() {
   }
 
   /// Applies a convolution filter to an image.
-  img.Image applyConvolution(
+  static img.Image applyConvolution(
       img.Image image, List<List<double>> kernel, double kernelSum) {
     int width = image.width;
     int height = image.height;
@@ -309,7 +283,7 @@ static Uint8List imageToDisplay() {
     return result;
   }
 
-  Uint8List convertImageToByteArray(img.Image image) {
+  static Uint8List convertImageToByteArray(img.Image image) {
     int width = image.width;
     int height = image.height;
     Uint8List imgBytes = Uint8List((width * height) ~/ 8);

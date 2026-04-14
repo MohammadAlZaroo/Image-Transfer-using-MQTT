@@ -12,6 +12,9 @@ class SendBuiltInImagePage extends StatefulWidget {
 }
 
 Uint8List reconstructedImage = Uint8List(0);
+Uint8List reconstructedEdgeImage = Uint8List(0);
+
+bool withEdgeMode = false;
 
 class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
   /// 🔹 Your built-in images
@@ -39,10 +42,16 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
     final selectedImage = images[selectedIndex!];
 
     try {
-      // the following two lines needs change.
-      ImageConverter.convertImageToIntArray(selectedImage).then((value) {
-        MqttService().publishImage(value);
-      });
+      if (withEdgeMode) {
+        ImageConverter.readImage(selectedImage).then((onValue) {
+          MqttService().publishImage(ImageConverter.convertImageToByteArray(
+              ImageConverter.cannyEdgeDetection(onValue)));
+        });
+      } else {
+        ImageConverter.convertImageToIntArray(selectedImage).then((value) {
+          MqttService().publishImage(value);
+        });
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Image sent successfully")),
@@ -79,14 +88,25 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
 
                 return GestureDetector(
                   onTap: () {
-                    setState(() {
-                      selectedIndex = index;
-                      ImageConverter.convertImageToIntArray(images[index])
-                          .then((value) {
-                        ImageConverter.reconstructImageFromBytes(value);
-                        reconstructedImage = ImageConverter.imageToDisplay();
-                      });
-                    });
+                    setState(
+                      () {
+                        selectedIndex = index;
+                        ImageConverter.convertImageToIntArray(images[index])
+                            .then((value) {
+                          reconstructedImage = ImageConverter.imageToDisplay(
+                              ImageConverter.reconstructImageFromBytes(value));
+                        });
+
+                        ImageConverter.readImage(images[index]).then((onValue) {
+                          reconstructedEdgeImage =
+                              ImageConverter.imageToDisplay(
+                                  ImageConverter.reconstructImageFromBytes(
+                                      ImageConverter.convertImageToByteArray(
+                                          ImageConverter.cannyEdgeDetection(
+                                              onValue))));
+                        });
+                      },
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -131,6 +151,8 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
               children: [
                 Text("The Image will look like this on the OLED screen"),
                 Image.memory(reconstructedImage, width: 128, height: 64),
+                Text("The Edge Image will look like this on the OLED screen"),
+                Image.memory(reconstructedEdgeImage, width: 128, height: 64),
               ],
             ),
 
@@ -140,10 +162,32 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: isSending ? null : sendSelectedImage,
+                onPressed: isSending
+                    ? null
+                    : () {
+                        withEdgeMode = false;
+                        sendSelectedImage();
+                      },
                 child: isSending
                     ? const CircularProgressIndicator()
                     : const Text("Send Image"),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isSending
+                    ? null
+                    : () {
+                        withEdgeMode = true;
+                        sendSelectedImage();
+                      },
+                child: isSending
+                    ? const CircularProgressIndicator()
+                    : const Text("Send Image Edges"),
               ),
             ),
           ),
