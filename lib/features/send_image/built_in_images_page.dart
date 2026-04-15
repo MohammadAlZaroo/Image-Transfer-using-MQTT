@@ -24,6 +24,7 @@ class _SendBuiltInImagePageState extends State<SendBuiltInImagePage> {
     "joy.png",
     "like.png",
     "exp.png",
+    "mqtt_logo.png",
   ];
 
   int? selectedIndex;
