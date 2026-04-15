@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
+import 'package:mqtt_test/core/image_processing/image_converter.dart';
 
 import '../../core/mqtt/mqtt_service.dart';
 
@@ -26,6 +27,8 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
     if (picked != null) {
       setState(() {
         selectedImage = File(picked.path);
+        print(selectedImage?.path);
+        print("hiiiiiiiiiiiiiiiiiiiiiiii");
       });
     }
   }
@@ -42,39 +45,46 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
 
     try {
       /// Read image
+      /// 
+      // ImageConverter.convertImageToIntArray("/data/user/0/com.example.mqtt_test/cache/b9d228b4-78d2-4fa7-a231-35c7bcaa8e5a/1000043571.jpg").then((value) {
+      //     MqttService().publishImage(value);
+      // });
+
       Uint8List bytes = await selectedImage!.readAsBytes();
       img.Image? original = img.decodeImage(bytes);
+      ImageConverter.convertImageToIntArray("", original).then((value) {
+          MqttService().publishImage(value);
+      });
+      // if (original == null) throw Exception("Invalid image");
 
-      if (original == null) throw Exception("Invalid image");
+      // img.Image resized = img.copyResize(
+      //   original,
+      //   width: 128,
+      //   height: 64,
+      // );
 
-      img.Image resized = img.copyResize(
-        original,
-        width: 128,
-        height: 64,
-      );
+      // img.Image gray = img.grayscale(resized);
 
-      img.Image gray = img.grayscale(resized);
+      // /// Convert to 1-bit (OLED format)
+      // Uint8List output = Uint8List((128 * 64) ~/ 8);
 
-      /// Convert to 1-bit (OLED format)
-      Uint8List output = Uint8List((128 * 64) ~/ 8);
+      // for (int y = 0; y < 64; y++) {
+      //   for (int x = 0; x < 128 ~/ 8; x++) {
+      //     int byte = 0;
 
-      for (int y = 0; y < 64; y++) {
-        for (int x = 0; x < 128 ~/ 8; x++) {
-          int byte = 0;
+      //     for (int bit = 0; bit < 8; bit++) {
+      //       int pixel = gray.getPixel(x * 8 + bit, y);
+      //       int lum = img.getLuminance(pixel);
 
-          for (int bit = 0; bit < 8; bit++) {
-            int pixel = gray.getPixel(x * 8 + bit, y);
-            int lum = img.getLuminance(pixel);
+      //       int bitValue = lum > 128 ? 1 : 0;
+      //       byte |= (bitValue << (7 - bit));
+      //     }
 
-            int bitValue = lum > 128 ? 1 : 0;
-            byte |= (bitValue << (7 - bit));
-          }
+      //     output[y * (128 ~/ 8) + x] = byte;
+      //   }
+      // }
 
-          output[y * (128 ~/ 8) + x] = byte;
-        }
-      }
-
-      MqttService().publishImage(output);
+      // MqttService().publishImage(output);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Image sent successfully")),
@@ -116,7 +126,7 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: isSending ? null : () => (),
+                  onPressed: isSending ? null : () => sendImage(),
                   child: isSending
                       ? const CircularProgressIndicator()
                       : const Text("Send Image"),

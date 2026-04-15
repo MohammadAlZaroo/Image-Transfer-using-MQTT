@@ -18,15 +18,18 @@ class ImageConverter {
     return image;
   }
 
-  static Future<List<int>> convertImageToIntArray(String name) async {
+  static Future<List<int>> convertImageToIntArray(String name,
+      [img.Image? image]) async {
     // Load BMP file
-    final ByteData imageData = await rootBundle.load('assets/images/$name');
+    if (image == null) {final ByteData imageData = await rootBundle.load('assets/images/$name');
     Uint8List imageBytes = imageData.buffer.asUint8List();
-    img.Image? image = img.decodeImage(imageBytes);
+     image = img.decodeImage(imageBytes);
 
     if (image == null) {
       throw Exception('Failed to decode image');
-    }
+    }}
+    
+
     // Ensure the image is monochrome (grayscale)
     img.Image monoImage = img.grayscale(image);
     List<int> histogram = computeHistogram(monoImage);
@@ -91,15 +94,12 @@ class ImageConverter {
   }
 
   void selectImage(int index) {
-    if (index == 0){
-      
-    }
+    if (index == 0) {}
   }
+
   static Uint8List imageToDisplay(img.Image image) {
     return Uint8List.fromList(img.encodePng(image));
   }
-
-
 
   /// Applies Canny edge detection to an image.
   static img.Image cannyEdgeDetection(img.Image image,
