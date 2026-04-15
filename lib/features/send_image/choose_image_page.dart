@@ -46,12 +46,8 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
       Uint8List bytes = await selectedImage!.readAsBytes();
       img.Image? original = img.decodeImage(bytes);
       if (original == null) throw Exception("Invalid image");
-      img.Image resized = img.copyResize(
-        original,
-        width: 128,
-        height: 64,
-      );
-      ImageConverter.convertImageToIntArray("", resized).then((value) {
+
+      ImageConverter.convertImageToIntArray("", original).then((value) {
         MqttService().publishImage(value);
       });
 

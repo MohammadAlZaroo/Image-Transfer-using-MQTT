@@ -29,9 +29,13 @@ class ImageConverter {
       throw Exception('Failed to decode image');
     }}
     
-
+          img.Image resized = img.copyResize(
+        image,
+        width: 128,
+        height: 64,
+      );
     // Ensure the image is monochrome (grayscale)
-    img.Image monoImage = img.grayscale(image);
+    img.Image monoImage = img.grayscale(resized);
     List<int> histogram = computeHistogram(monoImage);
     int threshold = otsuThreshold(histogram);
     // Get image dimensions
@@ -284,6 +288,11 @@ class ImageConverter {
   }
 
   static Uint8List convertImageToByteArray(img.Image image) {
+        image = img.copyResize(
+        image,
+        width: 128,
+        height: 64,
+      );
     int width = image.width;
     int height = image.height;
     Uint8List imgBytes = Uint8List((width * height) ~/ 8);
