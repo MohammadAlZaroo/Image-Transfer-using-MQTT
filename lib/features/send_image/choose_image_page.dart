@@ -16,6 +16,7 @@ class SendChoosenImagePage extends StatefulWidget {
 }
 
 Uint8List reconstructedImage = Uint8List(0);
+Uint8List reconstructedEdgeImage = Uint8List(0);
 Uint8List pickedImage = Uint8List(0);
 bool withEdgeMode = false;
 
@@ -43,6 +44,11 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
               ImageConverter.reconstructImageFromBytes(value));
         });
       });
+
+      reconstructedEdgeImage = ImageConverter.imageToDisplay(
+          ImageConverter.reconstructImageFromBytes(
+              ImageConverter.convertImageToByteArray(
+                  ImageConverter.cannyEdgeDetection(original!))));
     });
   }
 
@@ -57,13 +63,21 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
     setState(() => isSending = true);
 
     try {
-      Uint8List bytes = await selectedImage!.readAsBytes();
-      img.Image? original = img.decodeImage(bytes);
-      if (original == null) throw Exception("Invalid image");
+      if (withEdgeMode) {
+        Uint8List bytes = await selectedImage!.readAsBytes();
+        img.Image? original = img.decodeImage(bytes);
 
-      ImageConverter.convertImageToIntArray("", original).then((value) {
-        MqttService().publishImage(value);
-      });
+        MqttService().publishImage(ImageConverter.convertImageToByteArray(
+            ImageConverter.cannyEdgeDetection(original!)));
+      } else {
+        Uint8List bytes = await selectedImage!.readAsBytes();
+        img.Image? original = img.decodeImage(bytes);
+        if (original == null) throw Exception("Invalid image");
+
+        ImageConverter.convertImageToIntArray("", original).then((value) {
+          MqttService().publishImage(value);
+        });
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Image sent successfully")),
@@ -107,7 +121,13 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
                       const SizedBox(height: 10),
                       Text("how the Edge image looks like:"),
                       const SizedBox(height: 10),
-                      const SizedBox(height: 10),
+                      reconstructedEdgeImage.isEmpty
+                          ? const Text("Processing edge image...")
+                          : Image.memory(
+                              reconstructedEdgeImage,
+                              width: 128,
+                              height: 64,
+                            ),
                     ],
                   ),
           ),
@@ -125,14 +145,24 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: isSending ? null : () => sendImage(),
+                  onPressed: isSending
+                      ? null
+                      : () {
+                          withEdgeMode = false;
+                          sendImage();
+                        },
                   child: isSending
                       ? const CircularProgressIndicator()
                       : const Text("Send Image"),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: isSending ? null : () => (),
+                  onPressed: isSending
+                      ? null
+                      : () {
+                          withEdgeMode = true;
+                          sendImage();
+                        },
                   child: isSending
                       ? const CircularProgressIndicator()
                       : const Text("Send Image Edges"),
