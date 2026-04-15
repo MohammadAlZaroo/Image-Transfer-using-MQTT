@@ -11,21 +11,31 @@ class SendImagePage extends StatelessWidget {
         body: Stack(
           children: [
             MqttLogo(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/send_image/built_in'),
-                  child: const Text("choose from built-in images"),
-                ),
-                ElevatedButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/send_image/choose'),
-                  child: const Text("choose from gallery"),
-                ),
-              ],
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  const Text(
+                    "Choose the type of images you want to send",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pushNamed(
+                            context, '/send_image/built_in'),
+                        child: const Text("choose from built-in images"),
+                      ),
+                      ElevatedButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/send_image/choose'),
+                        child: const Text("choose from gallery"),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ));
