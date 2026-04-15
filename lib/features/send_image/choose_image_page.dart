@@ -15,6 +15,10 @@ class SendChoosenImagePage extends StatefulWidget {
   State<SendChoosenImagePage> createState() => _SendChoosenImagePageState();
 }
 
+Uint8List reconstructedImage = Uint8List(0);
+Uint8List pickedImage = Uint8List(0);
+bool withEdgeMode = false;
+
 class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
   File? selectedImage;
   bool isSending = false;
@@ -29,6 +33,17 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
         selectedImage = File(picked.path);
       });
     }
+
+    selectedImage!.readAsBytes().then((bytes) {
+      img.Image? original = img.decodeImage(bytes);
+
+      ImageConverter.convertImageToIntArray("", original).then((value) {
+        setState(() {
+          reconstructedImage = ImageConverter.imageToDisplay(
+              ImageConverter.reconstructImageFromBytes(value));
+        });
+      });
+    });
   }
 
   Future<void> sendImage() async {
@@ -42,7 +57,6 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
     setState(() => isSending = true);
 
     try {
-
       Uint8List bytes = await selectedImage!.readAsBytes();
       img.Image? original = img.decodeImage(bytes);
       if (original == null) throw Exception("Invalid image");
@@ -72,12 +86,30 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
           const SizedBox(height: 20),
 
           /// 🔹 Image Preview
-          Expanded(
-            child: Center(
-              child: selectedImage == null
-                  ? const Text("No image selected")
-                  : Image.file(selectedImage!),
-            ),
+          Center(
+            child: selectedImage == null
+                ? const Text("No image selected")
+                : Column(
+                    children: [
+                      Text("Selected Image:"),
+                      const SizedBox(height: 10),
+                      Image.file(selectedImage!, width: 128, height: 64),
+                      const SizedBox(height: 10),
+                      Text("how the image looks like:"),
+                      const SizedBox(height: 10),
+                      reconstructedImage.isEmpty
+                          ? const Text("Processing image...")
+                          : Image.memory(
+                              reconstructedImage,
+                              width: 128,
+                              height: 64,
+                            ),
+                      const SizedBox(height: 10),
+                      Text("how the Edge image looks like:"),
+                      const SizedBox(height: 10),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
           ),
 
           /// 🔹 Buttons
@@ -86,7 +118,9 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
             child: Column(
               children: [
                 ElevatedButton(
-                  onPressed: pickImage,
+                  onPressed: () {
+                    pickImage();
+                  },
                   child: const Text("Pick Image"),
                 ),
                 const SizedBox(height: 10),
@@ -95,6 +129,13 @@ class _SendChoosenImagePageState extends State<SendChoosenImagePage> {
                   child: isSending
                       ? const CircularProgressIndicator()
                       : const Text("Send Image"),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: isSending ? null : () => (),
+                  child: isSending
+                      ? const CircularProgressIndicator()
+                      : const Text("Send Image Edges"),
                 ),
               ],
             ),
