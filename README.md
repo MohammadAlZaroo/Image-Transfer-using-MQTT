@@ -139,13 +139,15 @@ flutter run
 
 ## Usage
 
-1. Open the app
-2. Tap **Connect to Broker**
-3. Choose:
+1. open the wokwi project by going to [https://wokwi.com/projects/421620623283388417](https://wokwi.com/projects/421620623283388417)
+2. click on the **Start Simulation** button to start the ESP32 simulation.
+3. Open the app
+4. Tap **Connect to Broker**
+5. Choose:
    - Send Text
    - Send Image
-4. Select image or type message
-5. Tap **Send**
+6. Select image or type message
+7. Tap **Send**
 
 ---
 
