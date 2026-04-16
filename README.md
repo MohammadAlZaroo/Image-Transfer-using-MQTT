@@ -99,7 +99,7 @@ This project combines Mobile application development, IoT, and Image Processing.
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/Image-Transfer-using-MQTT
+git clone https://github.com/MohammadAlZaroo/Image-Transfer-using-MQTT
 cd Image-Transfer-using-MQTT
 ```
 
@@ -134,6 +134,44 @@ MqttServerClient.withPort('YOUR_BROKER_URL', 'client_id', 8883);
 ```bash
 flutter run
 ```
+
+### 5️⃣ Configure MQTT Broker on ESP32 code
+
+open 
+
+```
+wokwi-project/sketch.ino
+```
+
+Update Wifi credentials:
+
+```C++
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+```
+
+leave them as this if you are using the Wokwi simulation
+
+```C++
+const char* ssid = "Wokwi-GUEST";
+const char* password = "";
+```
+
+Update broker:
+
+```C++
+const char* mqtt_broker = "YOUR_BROKER_URL";
+```
+
+update Broker credentials:
+
+```C++
+const char* mqtt_username = "YOUR_MQTT_USERNAME";
+const char* mqtt_password = "YOUR_MQTT_PASSWORD";
+```
+
+### 6️⃣ Run the ESP32 Simulation
+ - run the simulation on wowki or upload the code to your ESP32 board and connect the OLED display to it.
 
 ---
 
